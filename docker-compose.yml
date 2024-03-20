@@ -1,0 +1,24 @@
+version: "3.8"
+services:
+  ws:
+    container_name: websocketd
+    hostname: macbook-air
+    restart: on-failure
+    build:
+      context: .
+      dockerfile: ctf/Dockerfile
+    ports:
+      - "8080:8080"
+    command: >
+      websocketd --port=8080 /bin/sh -c "java -jar problem_4.jar 2>&1"
+
+  server:
+    container_name: ctf
+    restart: on-failure
+    build: .
+    ports:
+      - "10000:10000"
+    command: >
+      gunicorn --threads=4 -b 0.0.0.0:10000 ctf.wsgi
+    depends_on:
+      - ws

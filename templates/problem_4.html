@@ -1,0 +1,260 @@
+{% extends "problem_base.html" %}
+{% load pygmentify_tags %}
+{% load static %}
+{% load macros %}
+
+{% macro tab id name %}
+    <label class="ptab transition inline-block p-4 hover:bg-problem-window-hover text-neutral-content rounded-t-md"
+           onclick="changeContent(event, '{{ id }}')" autofocus> {{ name }} </label>
+{% endmacro %}
+{% macro tab_content id style content %}
+    <div id="{{ id }}" style="{{ style }}"
+         class="content hidden overflow-auto rounded-b-lg p-6 place-items-center bg-problem-window-gray h-full">
+        {{ content }}
+    </div>
+{% endmacro %}
+
+{% macro hint title content %}
+    <label class="collapse bg-problem-window-bar-gray">
+        <input type="checkbox"/>
+        <div class="collapse-title text-xl font-medium">
+            {{ title }}
+        </div>
+        <div class="collapse-content">
+            {{ content }}
+        </div>
+    </label>
+{% endmacro %}
+
+{% block head %}
+    <link rel="stylesheet" type="text/css" href="{% static '@xterm/xterm/css/xterm.css' %}"/>
+    <script src="{% static '@xterm/xterm/lib/xterm.js' %}"></script>
+    <script src="{% static '@xterm/addon-fit/lib/addon-fit.js' %}"></script>
+    <link rel="stylesheet" href="{% pygmentify_css %}">
+{% endblock %}
+{% block problem_num %}4{% endblock %}
+
+{% block tabs %}
+    {% use_macro tab "tab1" "Problem" %}
+    {% use_macro tab "tab2" "Background" %}
+    {% use_macro tab "tab3" "Code" %}
+{% endblock %}
+
+{% block tab_content %}
+    {% macro_block tab_content "tab1" "display:block" %}
+        {% macro_arg %}
+            <h1 class="text-4xl font-bold">Problem 4: Reverse Engineering</h1>
+            <div class="divider"></div>
+            <p> OverflowingWithCash™ is a US bank that started work on a CLI application to allow customers to access
+                their banking information through the command line. They just started work, and called you over to test
+                their Java prototype.
+            </p>
+            <br>
+            <p>
+                Tap the run button to run the Java code, and figure out a way to buy the flag.
+            </p>
+            <br>
+            {% macro_block hint "Hint 1" %}
+                {% macro_arg %}
+                    <p>
+                        Where could an integer overflow occur in the function
+                        <code class="bg-gray-700 rounded-md px-1">withdrawFunds</code>?
+                    </p>
+                {% endmacro_arg %}
+            {% endmacro_block %}
+            {% macro_block hint "Hint 2" %}
+                {% macro_arg %}
+                    <p>
+                        Remember that <code class="bg-gray-700 rounded-md px-1">withdrawalAmount</code> is multiplied by
+                        <code class="bg-gray-700 rounded-md px-1">1000</code>. Work backwards.
+                    </p>
+                {% endmacro_arg %}
+            {% endmacro_block %}
+        {% endmacro_arg %}
+    {% endmacro_block %}
+    {% macro_block tab_content "tab2" "display:none" %}
+        {% macro_arg %}
+            <h1 class="text-4xl font-bold">Background</h1>
+            <div class="divider"></div>
+            <p>This problem (and especially the one that follows) will be a bit more difficult than the previous
+                ones.</p>
+            <br>
+            <p>The main concept behind this problem is integer overflows. In Java, a variable of type
+                <code class="bg-gray-700 rounded-md px-1">int</code> can take on a value between
+                <code class="bg-gray-700 rounded-md px-1">-2147483648</code> and
+                <code class="bg-gray-700 rounded-md px-1">2147483647</code>. If a variable at the edge of one of these
+                limits is incremented/decremented, it can cause the integer to "wrap around" from positive to negative
+                (and vice versa).
+            </p>
+            <br>
+            <p><b>Example:</b> Take a look at the following piece of Java:</p>
+            {% pygmentify %}
+                <pre class="java bg-black rounded-lg p-2">
+int x = 2147483647;
+System.out.println(x);
+x++;
+System.out.println(x);
+                </pre>
+            {% endpygmentify %}
+            <p>Running this, we get the following output:</p>
+            <pre class="bg-black rounded-lg p-2">
+2147483647
+-2147483648</pre>
+            <p>
+                The "wrap around effect wraps the positive integer around to a negative integer because it was
+                incremented by 1.
+            </p>
+            <br>
+            <p>With this information, you should know enough to tackle the problem. Take a good look at the code.</p>
+        {% endmacro_arg %}
+    {% endmacro_block %}
+    <div id="tab3" style="display:none"
+         class="content hidden overflow-auto rounded-b-lg p-6 place-items-center bg-black h-full">
+        {% pygmentify %}
+            <pre class="java">
+package org.example;
+
+import java.util.Scanner;
+
+public class Main {
+    private static int balance = 0;
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println(
+            "===================================="
+        );
+        System.out.println("OverflowingWithCash Banking Portal");
+        System.out.println(
+            "===================================="
+        );
+        System.out.println("[*] Balance: $" + balance);
+
+        while (true) {
+            System.out.println("[*] Choose an option:");
+            System.out.println("    (1) Buy Flag");
+            System.out.println("    (2) Withdraw");
+            System.out.println("    (3) Exit");
+            int choice = scanner.nextInt();
+
+            switch (choice) {
+                case 1:
+                    buyFlag();
+                    break;
+                case 2:
+                    withdrawFunds(scanner);
+                    break;
+                case 3:
+                    System.out.println("[*] Thank you for using the OverflowingWithCash Banking Portal!");
+                    return;
+                default:
+                    System.out.println("[-] Invalid choice. Please try again.");
+            }
+        }
+    }
+
+    private static void buyFlag() {
+        if (balance < 100000000) {
+            System.out.println("[-] Insufficient funds to purchase the flag. Minimum $100M required.");
+            return;
+        }
+        System.out.println("[+] The flag is: ...OMITTED...");
+        System.exit(0);
+    }
+
+    private static void withdrawFunds(Scanner scanner) {
+        System.out.println("[*] Enter the withdrawal amount (in thousands):");
+        int withdrawalAmount = scanner.nextInt();
+        if (withdrawalAmount < 0) {
+            System.out.println("[-] Invalid withdrawal amount. Please enter a positive value.");
+            return;
+        }
+        if (balance < withdrawalAmount * 1000) {
+            System.out.println("[-] Insufficient funds. Cannot withdraw more than the current balance.");
+            return;
+        }
+        System.out.println("[+] Withdrawing $" + withdrawalAmount + "K...");
+        balance -= withdrawalAmount * 1000;
+        System.out.println("[*] Balance: $" + balance);
+    }
+}
+                    </pre>
+        {% endpygmentify %}
+    </div>
+    <style>
+        pre {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+    </style>
+{% endblock %}
+
+{% block right_content %}
+    <div class="join join-vertical flex flex-1 shadow-xl">
+        <div class="flex navbar rounded-lg place-content-center bg-base-100 join-item">
+            <a class="btn btn-outline btn-primary item-center text-xl" id="toggle">Run</a>
+        </div>
+        <div class="flex flex-1 grow rounded-lg join-item" id="terminal"></div>
+        <div class="join w-full">
+            <label class="input input-bordered flex items-center w-full join-item">
+                <i class="material-icons" style="font-size:24px">code</i>
+                <input type="text"
+                       class="input-sm placeholder-gray-500 outline-none border-transparent focus:border-transparent focus:ring-0 grow"
+                       autocomplete="off" autocapitalize="off" spellcheck="false"
+                       placeholder="Type stdin here"
+                       id="stdin"/>
+            </label>
+        </div>
+    </div>
+    <style>
+        .xterm {
+            padding: 15px !important;
+        }
+    </style>
+    <script type="module">
+        const term = new Terminal();
+        const fitAddon = new FitAddon.FitAddon();
+        term.loadAddon(fitAddon);
+
+        term.open(document.getElementById("terminal"));
+        const proposed_dim = fitAddon.proposeDimensions();
+        term.resize(proposed_dim.cols + 2, proposed_dim.rows);
+
+        const stdin = document.getElementById("stdin");
+        const toggle = document.getElementById("toggle");
+        let ws = null;
+
+        document.getElementById("toggle").onclick = function () {
+            if (toggle.innerText === "Run") {
+                ws = new WebSocket("REDACTED");
+                toggle.innerText = "Stop";
+                term.clear();
+
+                ws.onmessage = function (event) {
+                    term.write(event.data + "\n\r");
+                }
+
+                ws.onclose = function (_) {
+                    toggle.innerText = "Run";
+                }
+
+                stdin.addEventListener("keyup", function (event) {
+                    if (event.key === "Enter") {
+                        ws.send(stdin.value);
+                        stdin.value = "";
+                    }
+                });
+            } else {
+                ws.close()
+            }
+        }
+    </script>
+{% endblock %}
+
+{% block back_button %}
+    <a class="btn btn-primary btn-outline" href="/problems/3">Back</a>
+{% endblock back_button %}
+
+{% block next_button %}
+    <a class="btn btn-primary btn-outline" href="/problems/5">Next</a>
+{% endblock next_button %}

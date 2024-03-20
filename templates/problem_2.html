@@ -1,0 +1,451 @@
+{% extends "problem_base.html" %}
+{% load pygmentify_tags %}
+{% load static %}
+{% load macros %}
+
+{% macro tab id name %}
+    <label class="ptab transition inline-block p-4 hover:bg-problem-window-hover text-neutral-content rounded-t-md"
+           onclick="changeContent(event, '{{ id }}')" autofocus> {{ name }} </label>
+{% endmacro %}
+{% macro tab_content id style content %}
+    <div id="{{ id }}" style="{{ style }}"
+         class="content hidden overflow-auto rounded-lg p-6 place-items-center bg-problem-window-gray h-full">
+        {{ content }}
+    </div>
+{% endmacro %}
+
+{% block head %}
+    <link rel="stylesheet" href="{% pygmentify_css %}">
+{% endblock %}
+
+{% macro hint title content %}
+    <label class="collapse bg-problem-window-bar-gray">
+        <input type="checkbox"/>
+        <div class="collapse-title text-xl font-medium">
+            {{ title }}
+        </div>
+        <div class="collapse-content">
+            {{ content }}
+        </div>
+    </label>
+{% endmacro %}
+
+{% block problem_num %}2{% endblock %}
+
+{% block tabs %}
+    {% use_macro tab "tab1" "Problem" %}
+    {% use_macro tab "tab2" "Background" %}
+{% endblock %}
+
+{% block tab_content %}
+    {% macro_block tab_content "tab1" "display:block" %}
+        {% macro_arg %}
+            <h1 class="text-4xl font-bold">Problem 2: Sanitized Queries</h1>
+            <div class="divider"></div>
+            <p> This is our introduction to SQL injections. We covered these in a previous meeting (with this exact
+                problem actually), but it's a good refresher. Check the Background tab, which will teach you everything
+                you need to know for this problem.
+            </p>
+            <br>
+            <p>Run a SQL injection and login to the site on the right to reveal the flag.</p>
+            <br>
+
+            {% macro_block hint "Hint 1" %}
+                {% macro_arg %}
+                    <p>The SQL being run by the server for the website is the following:</p>
+                    {% pygmentify %}
+                        <pre class="sql bg-black rounded-lg p-2">SELECT * FROM users WHERE username='{username}' AND password='{password}';</pre>
+                    {% endpygmentify %}
+                    <p>Take a good look at the background tab, you might find something there...</p>
+                {% endmacro_arg %}
+            {% endmacro_block %}
+
+        {% endmacro_arg %}
+    {% endmacro_block %}
+    {% macro_block tab_content "tab2" "display:none" %}
+        {% macro_arg %}
+            <h1 class="text-4xl font-bold">The SQL Language and Injections</h1>
+            <div class="divider"></div>
+            <h1 class="text-2xl font-bold">What is SQL?</h1>
+            <p>
+                SQL (pronounced "sequel") is a programming language for handling databases. It reads like English and is
+                very easy to pick up. You can consider a database to be like an Excel spreadsheet: you have columns, and
+                each column stores information.
+                <br><br>
+                For example consider a simple database of users for a website. Then the database storing the users would
+                look something like this:
+            </p>
+            <table class="table table-md">
+                <!-- head -->
+                <thead>
+                <tr>
+                    <th>username</th>
+                    <th>password</th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- row 1 -->
+                <tr>
+                    <td>jesse007</td>
+                    <td>ilovefood123!</td>
+                </tr>
+                <!-- row 2 -->
+                <tr>
+                    <td>kinglouis3</td>
+                    <td>i@mk|ng123!</td>
+                </tr>
+                <!-- row 3 -->
+                <tr>
+                    <td>...</td>
+                    <td>...</td>
+                </tr>
+                </tbody>
+            </table>
+            <p>
+                Here <code class="bg-gray-700 rounded-md px-1">username</code> and
+                <code class="bg-gray-700 rounded-md px-1">password</code> are the two columns-- exactly like a
+                spreadsheet. Most websites use SQL to manage and store information, storing data in tables like in the
+                example above. For this problem we will be using SQLite, a flavor of SQL (this will become more
+                important in a later problem, but for now, don't stress about it).
+            </p>
+            <br>
+            <h1 class="text-2xl font-bold">Introduction</h1>
+            <p>
+                SQLite databases are stored in a normal looking file. Each database contains items called tables. And
+                each table is exactly that-- a table like the username-password we had above.
+            </p>
+            <br>
+            <p>
+                For example, assume we
+                had a database for a website called <code class="bg-gray-700 rounded-md px-1">webdb</code>. Then, in
+                that database, we could store multiple different tables such as username-password-phonenumber and
+                content to display on the site.
+            </p>
+            <br>
+            <h1 class="text-2xl font-bold">Basic SQL</h1>
+            <p>
+                This section contains the key commands you will need to know for the problem. For this problem, consider
+                a database with the following table named <code class="bg-gray-700 rounded-md px-1">userinfo</code>:
+            </p>
+            <table class="table table-md">
+                <!-- head -->
+                <thead>
+                <tr>
+                    <th>username</th>
+                    <th>password</th>
+                    <th>realname</th>
+                    <th>phonenumber</th>
+                    <th>age</th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- row 1 -->
+                <tr>
+                    <td>jesse007</td>
+                    <td>ilovefood123!</td>
+                    <td>Jesse</td>
+                    <td>(123)-456-789</td>
+                    <td>15</td>
+                </tr>
+                <!-- row 2 -->
+                <tr>
+                    <td>kinglouis3</td>
+                    <td>i@mk|ng123!</td>
+                    <td>Louis</td>
+                    <td>(987)-654-321</td>
+                    <td>18</td>
+                </tr>
+                <!-- row 3 -->
+                <tr>
+                    <td>...</td>
+                    <td>...</td>
+                    <td>...</td>
+                    <td>...</td>
+                </tr>
+                </tbody>
+            </table>
+            <h1 class="text-xl font-bold"><code class="bg-gray-700 rounded-md px-1">SELECT</code> statements</h1>
+            <p>
+                Let's say that from this table we want to extract the
+                <code class="bg-gray-700 rounded-md px-1">username</code> column only in a sort of "mini-table". In this
+                case, we will use the following <code class="bg-gray-700 rounded-md px-1">SELECT</code> statement:
+            </p>
+            {% pygmentify %}
+                <pre class="sql bg-black rounded-lg p-2">SELECT username FROM userinfo;</pre>
+            {% endpygmentify %}
+            <p>
+                The snippet is pretty simple: From our <code class="bg-gray-700 rounded-md px-1">userinfo</code> table,
+                we are selecting only the <code class="bg-gray-700 rounded-md px-1">username</code> column. This would
+                yield a table like the following:
+            </p>
+            <table class="table table-md">
+                <!-- head -->
+                <thead>
+                <tr>
+                    <th>username</th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- row 1 -->
+                <tr>
+                    <td>jesse007</td>
+                </tr>
+                <!-- row 2 -->
+                <tr>
+                    <td>kinglouis3</td>
+                </tr>
+                <!-- row 3 -->
+                <tr>
+                    <td>...</td>
+                </tr>
+                </tbody>
+            </table>
+            <p>
+                Nice! Selecting multiple columns is pretty similar:
+            </p>
+            {% pygmentify %}
+                <pre class="sql bg-black rounded-lg p-2">SELECT username, realname, age FROM userinfo;</pre>
+            {% endpygmentify %}
+            <p>which upon execution results in:</p>
+            <table class="table table-md">
+                <!-- head -->
+                <thead>
+                <tr>
+                    <th>username</th>
+                    <th>realname</th>
+                    <th>age</th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- row 1 -->
+                <tr>
+                    <td>jesse007</td>
+                    <td>Jesse</td>
+                    <td>15</td>
+                </tr>
+                <!-- row 2 -->
+                <tr>
+                    <td>kinglouis3</td>
+                    <td>Louis</td>
+                    <td>18</td>
+                </tr>
+                <!-- row 3 -->
+                <tr>
+                    <td>...</td>
+                    <td>...</td>
+                    <td>...</td>
+                </tr>
+                </tbody>
+            </table>
+            <p>We can even select the entire table and print it with all columns using an asterisk:</p>
+            {% pygmentify %}
+                <pre class="sql bg-black rounded-lg p-2">SELECT * FROM userinfo;</pre>
+            {% endpygmentify %}
+            <p>Remember this: it will be very important!</p>
+            <br>
+            <h1 class="text-xl font-bold"><code class="bg-gray-700 rounded-md px-1">WHERE</code> clauses</h1>
+            <p>
+                Now assume that we want to get all entries in the table with a condition (e.g. the username must be
+                <code class="bg-gray-700 rounded-md px-1">jesse007</code>). This is useful, because it could be used to
+                authenticate users for login forms (hint hint).
+            </p>
+            <br>
+            <p>
+                This is a use case for a <code class="bg-gray-700 rounded-md px-1">WHERE</code> clause on a
+                <code class="bg-gray-700 rounded-md px-1">SELECT</code> statement:
+            </p>
+            {% pygmentify %}
+                <pre class="sql bg-black rounded-lg p-2">SELECT username FROM userinfo WHERE username="jesse007";</pre>
+            {% endpygmentify %}
+            <p>
+                Let's break this down: Like before, we have a standard select statement which will only return a
+                one-column table with usernames. However, this time we use a where to ensure that this column has a
+                value of the string literal <code class="bg-gray-700 rounded-md px-1">jesse007</code>. Because
+                <code class="bg-gray-700 rounded-md px-1">jesse007</code> is indeed a value in the username column, we
+                get the following table as a result:
+            </p>
+            <table class="table table-md">
+                <!-- head -->
+                <thead>
+                <tr>
+                    <th>username</th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- row 1 -->
+                <tr>
+                    <td>jesse007</td>
+                </tr>
+                </tbody>
+            </table>
+            <p>Just like before, we can select on other columns:</p>
+            {% pygmentify %}
+                <pre class="sql bg-black rounded-lg p-2">SELECT realname, age FROM userinfo WHERE username="jesse007";</pre>
+            {% endpygmentify %}
+            Which would yield:
+            <table class="table table-md">
+                <!-- head -->
+                <thead>
+                <tr>
+                    <th>realname</th>
+                    <th>age</th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- row 1 -->
+                <tr>
+                    <td>Jesse</td>
+                    <td>15</td>
+                </tr>
+                </tbody>
+            </table>
+            <br>
+            <h1 class="text-xl font-bold">Comments</h1>
+            <p>Comments are an important part of any language, but it is of special importance for SQL injections. In
+                SQLite, comments are denoted using <code class="bg-gray-700 rounded-md px-1">--</code> followed by
+                whatever the comment is:</p>
+            {% pygmentify %}
+                <pre class="sql bg-black rounded-lg p-2">SELECT * FROM userinfo WHERE username="jesse007"; -- this is a comment</pre>
+            {% endpygmentify %}
+            <br>
+            <h1 class="text-2xl font-bold">SQL Injections</h1>
+            <p>
+                Now, let's delve into a critical aspect of SQL that's particularly relevant in cybersecurity: SQL
+                injection. SQL injection is a technique used by malicious actors to exploit vulnerabilities in web
+                applications that use SQL databases. By injecting malicious SQL code into input fields, attackers can
+                manipulate the database, retrieve sensitive information, or even gain unauthorized access to the system.
+            </p>
+            <br>
+            <p>Suppose we have a simple login form on a website that checks the username and password against a
+                database:</p>
+            {% pygmentify %}
+                <pre class="sql bg-black rounded-lg p-2">SELECT * FROM users WHERE username='{username}' AND password='{password}';</pre>
+            {% endpygmentify %}
+            <p>
+                where whatever is inputted in the website is substituted in for
+                <code class="bg-gray-700 rounded-md px-1">{username}</code> and
+                <code class="bg-gray-700 rounded-md px-1">{password}</code>. If anything other than an empty table is
+                returned from this statement, we know that this record exists with the correct username/password, and
+                the user is thus logged in.
+            </p>
+            <br>
+            <p>
+                Imagine an attacker submits the string
+                <code class="bg-gray-700 rounded-md px-1">' OR 1=1; --</code> for
+                <code class="bg-gray-700 rounded-md px-1">{username}</code> and some random string for password. Then
+                the SQL statement that is executed to check the password becomes:
+            </p>
+            {% pygmentify %}
+                <pre class="sql bg-black rounded-lg p-2">SELECT * FROM users WHERE username='' OR 1=1; --' AND password='foo';</pre>
+            {% endpygmentify %}
+            <p>
+                Let's breakdown what just happened: By submitting <code class="bg-gray-700 rounded-md px-1">'</code> at
+                the
+                beginning, the string literal is closed; Next the <code class="bg-gray-700 rounded-md px-1">OR
+                1=1</code> is
+                exactly what it would be in any other programming languages (
+                <code class="bg-gray-700 rounded-md px-1">1=1</code> is always true, so by chaining it with an
+                <code class="bg-gray-700 rounded-md px-1">OR</code> clause we're essentially saying that the
+                <code class="bg-gray-700 rounded-md px-1">WHERE</code> clause will always be true, making the
+                <code class="bg-gray-700 rounded-md px-1">WHERE</code> statement irrelevant). Finally by adding in the
+                <code class="bg-gray-700 rounded-md px-1">--</code> at the end, we're commenting out the entire password
+                check in the SQL code.
+            </p>
+            <br>
+            <p>
+                Running this maliciously injected SQL code is equivalent to running the following:
+            </p>
+            {% pygmentify %}
+                <pre class="sql bg-black rounded-lg p-2">SELECT * FROM users;</pre>
+            {% endpygmentify %}
+            and because this returns a result, the server running the website thinks that the username-password record
+            does in fact exist, and allow the login.
+        {% endmacro_arg %}
+    {% endmacro_block %}
+{% endblock %}
+
+{% block right_content %}
+    {% if not login %}
+        <div class="flex flex-1 rounded-lg overflow-auto bg-black shadow-xl items-center justify-center group">
+            <section class="flex-1 bg-gray-900">
+                <div class="flex flex-col items-center justify-center px-6 py-8 mx-auto md:h-screen lg:py-0">
+                    <p class="flex items-center mb-6 text-2xl font-semibold text-white">
+                        <img class="w-8 h-8 mr-2" src="{% static "/icons8-database-100.png" %}" alt="logo">
+                        SanitizedQueries
+                    </p>
+                    <div class="w-full rounded-lg shadow border md:mt-0 sm:max-w-md xl:p-0 bg-gray-800 border-gray-700">
+                        <div class="p-6 space-y-4 md:space-y-6 sm:p-8">
+                            <h1 class="text-xl font-bold leading-tight tracking-tight md:text-2xl text-white">
+                                Sign in to your account
+                            </h1>
+                            <form class="space-y-4 md:space-y-6" method="POST">
+                                {% csrf_token %}
+                                <div>
+                                    <label for="username"
+                                           class="block mb-2 text-sm font-medium text-white">Username</label>
+                                    <div class="relative">
+                                        <input id="username" name="username" type="text" autocomplete="off"
+                                               autocapitalize="off" spellcheck="false" required
+                                               class="peer py-3 px-4 ps-11 block w-full border sm:text-sm rounded-lg block w-full p-2.5 bg-gray-700 border-gray-600 placeholder-gray-400 text-white focus:ring-accent focus:border-accent">
+                                        <div class="absolute inset-y-0 start-0 flex items-center pointer-events-none ps-4 peer-disabled:opacity-50 peer-disabled:pointer-events-none">
+                                            <svg class="flex-shrink-0 w-4 h-4 text-gray-500"
+                                                 xmlns="http://www.w3.org/2000/svg"
+                                                 width="24"
+                                                 height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                 stroke-width="2"
+                                                 stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                                                <circle cx="12" cy="7" r="4"></circle>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label for="password"
+                                           class="block mb-2 text-sm font-medium text-white">Password</label>
+                                    <div class="relative">
+                                        <input id="password" name="password" type="password" autocomplete="off"
+                                               autocapitalize="off" spellcheck="false" required
+                                               class="peer py-3 px-4 ps-11 block w-full border sm:text-sm rounded-lg block w-full p-2.5 bg-gray-700 border-gray-600 placeholder-gray-400 text-white focus:ring-accent focus:border-accent">
+                                        <div class="absolute inset-y-0 start-0 flex items-center pointer-events-none ps-4 peer-disabled:opacity-50 peer-disabled:pointer-events-none">
+                                            <svg class="flex-shrink-0 w-4 h-4 text-gray-500"
+                                                 xmlns="http://www.w3.org/2000/svg"
+                                                 width="24"
+                                                 height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                                 stroke-width="2"
+                                                 stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M2 18v3c0 .6.4 1 1 1h4v-3h3v-3h2l1.4-1.4a6.5 6.5 0 1 0-4-4Z"></path>
+                                                <circle cx="16.5" cy="7.5" r=".5"></circle>
+                                            </svg>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <button type="submit" name="sql_injection_login"
+                                            class="flex w-full justify-center rounded-md btn btn-accent">
+                                        Sign in
+                                    </button>
+                                </div>
+                            </form>
+                            {% if error %}
+                                <div role="alert" class="alert alert-error">{{ error }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    {% else %}
+        <div class="flex flex-1 rounded-lg overflow-auto bg-gray-900 shadow-xl items-center justify-center group">
+            <h1 class="text-2xl">&lt;FLAG&gt;ok_nice_work_with_sql&lt;FLAG&gt;</h1>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block back_button %}
+    <a class="btn btn-primary btn-outline" href="/problems/1">Back</a>
+{% endblock back_button %}
+
+{% block next_button %}
+    <a class="btn btn-primary btn-outline" href="/problems/3">Next</a>
+{% endblock next_button %}

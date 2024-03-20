@@ -1,0 +1,349 @@
+{% extends "problem_base.html" %}
+{% load pygmentify_tags %}
+{% load static %}
+{% load macros %}
+
+{% macro tab id name %}
+    <label class="ptab transition inline-block p-4 hover:bg-problem-window-hover text-neutral-content rounded-t-md"
+           onclick="changeContent(event, '{{ id }}')" autofocus> {{ name }} </label>
+{% endmacro %}
+{% macro tab_content id style content %}
+    <div id="{{ id }}" style="{{ style }}"
+         class="content hidden overflow-auto rounded-b-lg p-6 place-items-center bg-problem-window-gray h-full">
+        {{ content }}
+    </div>
+{% endmacro %}
+
+{% block problem_num %}5{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{% pygmentify_css %}">
+{% endblock %}
+
+{% block tabs %}
+    {% use_macro tab "tab1" "Problem" %}
+    {% use_macro tab "tab2" "Background" %}
+{% endblock %}
+
+{% block tab_content %}
+    {% macro_block tab_content "tab1" "display:block" %}
+        {% macro_arg %}
+            <h1 class="text-4xl font-bold">Problem 5: CombDepot</h1>
+            <div class="divider"></div>
+            <p> Let’s dig deeper into SQL Injections. You are provided the interface for a new startup: CombDepot. When
+                you search for a product, a database of products is queried.
+            </p>
+            <br>
+            <p>Somewhere in that database, the flag is hidden (its a table name)...</p>
+            <br>
+            <p>You'll need the background to solve this one. However, here is a clue to get you started: The table has
+                5 columns: id, name, new, description, hair_type. You must write a SQL injection to union the table
+                names to display it in one of the cards on the screen.</p>
+            <br>
+            <p>The SQL query for this is:</p>
+            {% pygmentify %}
+                <pre class="sql bg-black rounded-lg p-2">
+select * from problems_item where description like '%{search_content}%'
+                </pre>
+            {% endpygmentify %}
+        {% endmacro_arg %}
+    {% endmacro_block %}
+    {% macro_block tab_content "tab2" "display:none" %}
+        {% macro_arg %}
+            <h1 class="text-4xl font-bold">More Background on SQL (Injections)</h1>
+            <div class="divider"></div>
+            <p>
+                <b>NOTE:</b> This problem requires that you have read the Background section for problem #2.
+            </p>
+            <br>
+            <h1 class="text-2xl font-bold"><code class="bg-gray-700 rounded-md px-1">UNION</code> statements</h1>
+            <p>
+                A <code class="bg-gray-700 rounded-md px-1">UNION</code> statement in SQL is used to combine the results
+                of two or more <code class="bg-gray-700 rounded-md px-1">SELECT</code> queries into a single result set.
+            </p>
+            {% pygmentify %}
+                <pre class="sql bg-black rounded-lg p-2">
+SELECT column1 FROM table1
+UNION
+SELECT column2 FROM table2;
+                </pre>
+            {% endpygmentify %}
+            <p>
+                Note that <code class="bg-gray-700 rounded-md px-1">table1</code> and
+                <code class="bg-gray-700 rounded-md px-1">table2</code> need not be different.
+            </p>
+            So taking our example table from problem #2:
+            <table class="table table-md">
+                <!-- head -->
+                <thead>
+                <tr>
+                    <th>username</th>
+                    <th>password</th>
+                    <th>realname</th>
+                    <th>phonenumber</th>
+                    <th>age</th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- row 1 -->
+                <tr>
+                    <td>jesse007</td>
+                    <td>ilovefood123!</td>
+                    <td>Jesse</td>
+                    <td>(123)-456-789</td>
+                    <td>15</td>
+                </tr>
+                <!-- row 2 -->
+                <tr>
+                    <td>kinglouis3</td>
+                    <td>i@mk|ng123!</td>
+                    <td>Louis</td>
+                    <td>(987)-654-321</td>
+                    <td>18</td>
+                </tr>
+                <!-- row 3 -->
+                <tr>
+                    <td>...</td>
+                    <td>...</td>
+                    <td>...</td>
+                    <td>...</td>
+                </tr>
+                </tbody>
+            </table>
+            <p>Running the following SQL code:</p>
+            {% pygmentify %}
+                <pre class="sql bg-black rounded-lg p-2">SELECT username FROM userinfo UNION SELECT realname FROM userinfo;</pre>
+            {% endpygmentify %}
+            We get the following table:
+            <table class="table table-md">
+                <!-- head -->
+                <thead>
+                <tr>
+                    <th>username</th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- row 1 -->
+                <tr>
+                    <td>jesse007</td>
+                </tr>
+                <tr>
+                    <td>kinglouis3</td>
+                </tr>
+                <tr>
+                    <td>...</td>
+                </tr>
+                <tr>
+                    <td>Jesse</td>
+                </tr>
+                <tr>
+                    <td>Louis</td>
+                </tr>
+                <tr>
+                    <td>...</td>
+                </tr>
+                </tbody>
+            </table>
+            <p>As you can see, the columns got stacked.</p>
+            <br>
+            <p>Here is another example that will NOT work:</p>
+            {% pygmentify %}
+                <pre class="sql bg-black rounded-lg p-2">SELECT username, password FROM userinfo UNION SELECT realname FROM userinfo;</pre>
+            {% endpygmentify %}
+            <p>
+                This is because the columns on the left select statement side is two, while the columns on the right
+                select statement is only one.
+            </p>
+            <br>
+            <h1 class="text-2xl font-bold"><code class="bg-gray-700 rounded-md px-1">SELECT</code>ing Constants</h1>
+            <p>
+                We can also "create tables on the fly" by selecting constants:
+            </p>
+            {% pygmentify %}
+                <pre class="sql bg-black rounded-lg p-2">SELECT 1, 2, 3, 4;</pre>
+            {% endpygmentify %}
+            <table class="table table-md">
+                <!-- head -->
+                <thead>
+                <tr>
+                    <th>1</th>
+                    <th>2</th>
+                    <th>3</th>
+                    <th>4</th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- row 1 -->
+                <tr>
+                    <td>1</td>
+                    <td>2</td>
+                    <td>3</td>
+                    <td>4</td>
+                </tr>
+                </tbody>
+            </table>
+            <p>We can even combine this with a normal select statement:</p>
+            {% pygmentify %}
+                <pre class="sql bg-black rounded-lg p-2">SELECT 1, 2, username FROM userinfo;</pre>
+            {% endpygmentify %}
+            To give
+            <table class="table table-md">
+                <!-- head -->
+                <thead>
+                <tr>
+                    <th>1</th>
+                    <th>2</th>
+                    <th>username</th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- row 1 -->
+                <tr>
+                    <td>1</td>
+                    <td>2</td>
+                    <td>jesse007</td>
+                </tr>
+                <!-- row 2 -->
+                <tr>
+                    <td>1</td>
+                    <td>2</td>
+                    <td>kinglouis3</td>
+                </tr>
+                <!-- row 3 -->
+                <tr>
+                    <td>1</td>
+                    <td>2</td>
+                    <td>...</td>
+                </tr>
+                </tbody>
+            </table>
+            <p>
+                This is useful because it allows us to add "padding" for unions when the columns differ. Using the
+                previous table, we modify the SQL code that didn't work previously to make it work:
+            </p>
+            {% pygmentify %}
+                <pre class="sql bg-black rounded-lg p-2">SELECT username, password FROM userinfo UNION SELECT 1, realname FROM userinfo;</pre>
+            {% endpygmentify %}
+            Which results in
+            <table class="table table-md">
+                <!-- head -->
+                <thead>
+                <tr>
+                    <th>username</th>
+                    <th>password</th>
+                </tr>
+                </thead>
+                <tbody>
+                <!-- row 1 -->
+                <tr>
+                    <td>jesse007</td>
+                    <td>ilovefood123!</td>
+                </tr>
+                <!-- row 2 -->
+                <tr>
+                    <td>kinglouis3</td>
+                    <td>i@mk|ng123!</td>
+                </tr>
+                <!-- row 3 -->
+                <tr>
+                    <td>...</td>
+                    <td>...</td>
+                </tr>
+                <!-- row 4 -->
+                <tr>
+                    <td>1</td>
+                    <td>Jesse</td>
+                </tr>
+                <!-- row 5 -->
+                <tr>
+                    <td>1</td>
+                    <td>Louis</td>
+                </tr>
+                <!-- row 6 -->
+                <tr>
+                    <td>...</td>
+                    <td>...</td>
+                </tr>
+                </tbody>
+            </table>
+            <p>As you can see, the 1 is acting as a padding to help union the two select statements together.</p>
+            <br>
+            <h1 class="text-2xl font-bold">Getting all tables in a SQLite Database</h1>
+            <p>As mentioned previously, the database the website on the right is running on is SQLite. To get all the
+                tables in the database using a SQL query, we can run:</p>
+            {% pygmentify %}
+                <pre class="sql bg-black rounded-lg p-2">SELECT name FROM main.sqlite_master WHERE type='table';</pre>
+            {% endpygmentify %}
+            which will give us a table with one column containing the names of all the tables in the database.
+        {% endmacro_arg %}
+    {% endmacro_block %}
+{% endblock %}
+
+{% block right_content %}
+    <div data-theme="light" class="flex flex-1 rounded-lg overflow-auto shadow-xl">
+        <div class="flex flex-col flex-1">
+            <div class="navbar shadow-xl gap-1">
+                <div class="flex-none">
+                    <img id="logo" class="max-w-md" src="{% static "/combdepot.png" %}" alt="logo">
+                </div>
+                <button class="btn btn-ghost flex-none">
+                    <i class="material-icons" style="font-size:24px">local_shipping</i>
+                </button>
+                <div class="flex-1 gap-2">
+                    <form class="join join-horizontal form-control flex-1" method="POST">
+                        {% csrf_token %}
+                        <input type="text" placeholder="What can we help you find today?" name="search_content"
+                               class="join-item input input-bordered flex-1"/>
+                        <button class="btn join-item" id="search_button" type="submit" name="sql_injection_search">
+                            <i class="material-icons" style="font-size:24px">search</i>
+                        </button>
+                    </form>
+                </div>
+                <button class="btn btn-ghost flex-none">
+                    <i class="material-icons" style="font-size:24px">person</i>
+                </button>
+                <button class="btn btn-ghost flex-none">
+                    <i class="material-icons" style="font-size:24px">shopping_cart</i>
+                </button>
+            </div>
+            <div class="grid grid-cols-3 p-4 gap-2">
+                {% for item in items %}
+                    <div class="card bg-base-100 shadow-xl">
+                        <div class="card-body">
+                            <h2 class="card-title">
+                                {{ item.name }}
+                                {% if item.new %}
+                                    <div class="badge badge-secondary">NEW</div>
+                                {% endif %}
+                            </h2>
+                            <p>{{ item.description }}</p>
+                            <div class="card-actions justify-end">
+                                <div class="badge badge-outline">{{ item.hair_type }}</div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <!--I'm so fed up with tailwind, so...-->
+    <style>
+        #logo {
+            height: auto;
+            width: auto;
+            max-width: 60px;
+            max-height: 60px;
+        }
+
+        #search_button {
+            background: #F29543
+        }
+    </style>
+{% endblock %}
+
+{% block back_button %}
+    <a class="btn btn-primary btn-outline" href="/problems/4">Back</a>
+{% endblock back_button %}
+
+{% block next_button %}
+    <a class="btn btn-primary btn-outline btn-disabled">Next</a>
+{% endblock next_button %}

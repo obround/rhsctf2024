@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@xterm/addon-fit": "latest",
+    "@xterm/xterm": "latest"
+  }
+}

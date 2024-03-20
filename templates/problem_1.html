@@ -1,0 +1,58 @@
+{% extends "problem_base.html" %}
+{% load pygmentify_tags %}
+{% load macros %}
+
+{% macro tab id name %}
+    <label class="ptab transition inline-block p-4 hover:bg-problem-window-hover text-neutral-content rounded-t-md"
+           onclick="changeContent(event, '{{ id }}')" autofocus> {{ name }} </label>
+{% endmacro %}
+{% macro tab_content id style content %}
+    <div id="{{ id }}" style="{{ style }}"
+         class="content hidden overflow-auto rounded-b-lg p-6 place-items-center bg-problem-window-gray h-full">
+        {{ content }}
+    </div>
+{% endmacro %}
+
+{% block problem_num %}1{% endblock %}
+
+{% block tabs %}
+    {% use_macro tab "tab1" "Problem" %}
+{% endblock %}
+
+{% block tab_content %}
+    {% macro_block tab_content "tab1" "display:block" %}
+        {% macro_arg %}
+            <h1 class="text-4xl font-bold">Problem 1: Introduction</h1>
+            <div class="divider"></div>
+            <p> Welcome to the RHS Cybersecurity Club's Capture the Flag event! This first problem will orient you to
+            how this event works.
+            </p>
+            <br>
+            <p> The goal of a CTF is to exploit, investigate, or reverse engineer a website/program provided to you.
+                Once solved, you will find a text flag, which is essentially the solution to the problem. For this CTF,
+                all flags will be of the form <code
+                        class="bg-gray-700 rounded-md px-1">&lt;FLAG&gt;...&lt;FLAG&gt;</code>. You
+                submit your flag in the box above.
+            </p>
+            <br>
+            <p>
+                For this problem, your flag is <code class="bg-gray-700 rounded-md px-1">&lt;FLAG&gt;easy_peasy&lt;FLAG&gt;</code>.
+            </p>
+        {% endmacro_arg %}
+    {% endmacro_block %}
+{% endblock %}
+
+{% block right_content %}
+    <div class="flex flex-1 rounded-lg overflow-auto bg-black shadow-xl items-center justify-center group">
+        <h1 class="text-4xl transition hover:duration-1000 ease-in-out font-semibold text-gray-500 group-hover:text-gray-300">
+            No Content</h1>
+    </div>
+{% endblock %}
+
+{% block back_button %}
+    <a class="btn btn-primary btn-outline btn-disabled">Back</a>
+{% endblock back_button %}
+
+{% block next_button %}
+    <a class="btn btn-primary btn-outline" href="/problems/2">Next</a>
+{% endblock next_button %}
